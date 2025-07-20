@@ -1,0 +1,188 @@
+#include <Servo.h>
+
+Servo myServo;
+
+#define IN1 8
+#define IN2 7
+#define ENA 9 
+#define IN3 6
+#define IN4 5 
+#define ENB 4
+
+#define sensorL A0
+#define sensorM A1
+#define sensorR A2
+
+#define trig 3
+#define echo 2
+
+int tocdoA = 0;
+int tocdoB = 0;
+
+int Trai;
+int Giua;
+int Phai;
+int khoangcach;
+unsigned long thoigian;
+const unsigned long interval = 100;
+unsigned long lastupdate = 0;
+//đặt hàm cho đôngj cơ dc
+void setSpeed(int tocdoA, int tocdoB) {
+  analogWrite(ENA, constrain(tocdoA, 0, 255));
+  analogWrite(ENB, constrain(tocdoB, 0, 255));
+}
+
+
+void diThang() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+
+  setSpeed(150, 150);
+}
+
+
+void diLui() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+
+  setSpeed(150, 150);
+}
+
+void reTrai() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+
+  setSpeed(150, 150);
+}
+
+
+void rePhai() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+
+  setSpeed(150, 150);
+}
+
+
+void lechTrai() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+
+  setSpeed(100, 180);
+}
+
+void lechPhai() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+
+  setSpeed(180, 100); 
+}
+
+
+void setup() {
+  Serial.begin(9600);
+
+  // cảm biến siêu âm
+  pinMode(trig, OUTPUT);
+  pinMode(echo, INPUT);
+
+// động cơ dc
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(ENA, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(ENB, OUTPUT);
+
+  // Cảm biến dò line
+  pinMode(sensorL, INPUT);
+  pinMode(sensorM, INPUT);
+  pinMode(sensorR, INPUT);
+
+  // Servo
+  myServo.attach(10); // Sử dụng chân 10 thay vì chân 1 để tránh xung đột Serial
+}
+
+void loop() {
+  // Đọc cảm biến siêu âm
+  digitalWrite(trig, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+
+  thoigian = pulseIn(echo, HIGH);
+  khoangcach = int(thoigian / 2 / 29.412);
+
+  Serial.print("Khoang cach: ");
+  Serial.print(khoangcach);
+  Serial.println(" cm");
+
+  // Đọc cảm biến dò line
+  Trai = analogRead(sensorL);
+  Giua = analogRead(sensorM);
+  Phai = analogRead(sensorR);
+
+  Serial.print("Trái: "); Serial.print(Trai);
+  Serial.print(" | Giữa: "); Serial.print(Giua);
+  Serial.print(" | Phải: "); Serial.println(Phai);
+
+  if (Giua < 500 && Trai > 500 && Phai > 500) {
+    Serial.println("==> Đi thẳng");
+  } 
+  else if (Trai < 500 && Giua > 500 && Phai > 500) {
+    Serial.println("==> Quay trái");
+  }
+  else if (Phai < 500 && Giua > 500 && Trai > 500) {
+    Serial.println("==> Quay phải");
+  } 
+  else if (Trai < 500 && Giua < 500 && Phai < 500) {
+    Serial.println("==> Ngã ba");
+  }
+  else if (Trai < 500 && Giua < 500 && Phai > 500) {
+    Serial.println("==> Lệch trái");
+  }
+  else if (Trai > 500 && Giua < 500 && Phai < 500) {
+    Serial.println("==> Lệch phải");
+  }
+  else {
+    Serial.println("==> Mất line");
+  }
+
+  // Quay servo từ 0 đến 45 độ rồi quay về 0 độ
+  for (int pos = 0; pos <= 45; pos++) {
+    myServo.write(pos);
+    Serial.print("Góc: ");
+    Serial.println(pos);
+    delay(10);
+  }
+  for (int pos = 45; pos >= 0; pos--) {
+    myServo.write(pos);
+    Serial.print("Góc: ");
+    Serial.println(pos);
+    delay(10);
+  }
+
+ 
+
+    
+  
+}
